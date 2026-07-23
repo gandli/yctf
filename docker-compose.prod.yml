@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yctf-postgres
+    environment:
+      POSTGRES_USER: yctf
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yctf_production_password}
+      POSTGRES_DB: yctf
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yctf"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - yctf-internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: yctf-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-yctf_redis_pass} --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-yctf_redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - yctf-internal
+
+  server:
+    image: ghcr.io/gandli/yctf/server:latest
+    container_name: yctf-server
+    environment:
+      DATABASE_URL: postgres://yctf:${POSTGRES_PASSWORD:-yctf_production_password}@postgres:5432/yctf?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:-yctf_redis_pass}@redis:6379/0
+      JWT_SECRET: ${JWT_SECRET}
+      FLAG_SECRET: ${FLAG_SECRET}
+      PORT: 8080
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - yctf-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+  nginx:
+    image: nginx:alpine
+    container_name: yctf-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./clientapp/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - yctf-internal
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  yctf-internal:
+    driver: bridge
+    internal: false
