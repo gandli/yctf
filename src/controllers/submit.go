@@ -3,6 +3,9 @@ package controllers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+
+	"github.com/gandli/yctf/utils"
 )
 
 type SubmitRequest struct {
@@ -10,7 +13,18 @@ type SubmitRequest struct {
 	Flag        string `json:"flag"`
 }
 
-var teamSolves = make(map[string]bool)
+var (
+	teamSolves = make(map[string]bool)
+	flagSecret = getFlagSecret()
+)
+
+func getFlagSecret() string {
+	secret := os.Getenv("FLAG_SECRET")
+	if secret == "" {
+		secret = "dev-flag-secret-change-in-production"
+	}
+	return secret
+}
 
 func SubmitFlagHandler(w http.ResponseWriter, r *http.Request) {
 	var req SubmitRequest
@@ -33,7 +47,8 @@ func SubmitFlagHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	correct := req.Flag == "flag{test-correct}" || req.Flag == "flag{dup-test}"
+	correct := utils.ValidateFlag(req.Flag, "team-placeholder", chal.ID, flagSecret)
+
 	solveKey := "team-placeholder:" + req.ChallengeID
 	alreadySolved := teamSolves[solveKey]
 
