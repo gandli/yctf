@@ -40,23 +40,6 @@ Designed for security teams, CTF organizers, and training environments who want 
 
 ---
 
-## 📖 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [PRD.md](docs/PRD.md) | Product Requirements Document |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System Architecture |
-| [DECISIONS.md](docs/DECISIONS.md) | Technical Decision Records (ADR) |
-| [API.md](docs/API.md) | REST API & WebSocket Documentation |
-| [DATABASE.md](docs/DATABASE.md) | Database Schema & Redis Structures |
-| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development Setup & Coding Standards |
-| [SECURITY.md](docs/SECURITY.md) | Security Design & Hardening |
-| [TODO.md](docs/TODO.md) | Development Roadmap |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Contributing Guidelines |
-| [LICENSE](docs/LICENSE) | AGPL-3.0 License |
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -79,17 +62,58 @@ docker compose up -d
 # Grafana: http://localhost:3001
 ```
 
+### Development
+
+```bash
+# Backend
+cd src && go run cmd/server/main.go
+
+# Frontend
+cd clientapp && npm install && npm run dev
+```
+
+---
+
+## 📁 Project Structure
+
+```
+yctf/
+├── clientapp/          # React frontend
+│   ├── app/            # Routes & pages
+│   ├── components/     # UI components
+│   └── utils/          # Frontend utilities
+├── src/                # Go backend
+│   ├── controllers/    # HTTP handlers
+│   ├── db/             # Database models & migrations
+│   ├── middleware/     # Auth, logging, rate-limit
+│   ├── tasks/          # Background jobs
+│   └── utils/          # Backend utilities
+├── migrations/         # SQL migrations
+├── i18n/               # Translation files
+├── grafana/            # Dashboards
+├── Dockerfile
+└── docker-compose.yml
+```
+
+---
+
+## 📖 Documentation
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System design, data flow, module boundaries
+- [DECISIONS.md](./DECISIONS.md) — Technical decision records (ADR)
+- [TODO.md](./TODO.md) — Development milestones and task breakdown
+
 ---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ---
 
 ## 📄 License
 
-AGPL-3.0 — See [LICENSE](docs/LICENSE).
+AGPL-3.0 — See [LICENSE](./LICENSE).
 
 ---
 
