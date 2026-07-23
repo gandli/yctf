@@ -21,19 +21,3 @@ func UpdateChallengeHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
-
-func AdminListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"users": []interface{}{},
-	})
-}
-
-func AdminStatsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"users":       0,
-		"challenges":  0,
-		"submissions": 0,
-	})
-}
