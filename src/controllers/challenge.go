@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/gandli/yctf/db/models"
+	"github.com/google/uuid"
 )
 
 var (
@@ -35,6 +36,7 @@ func CreateChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chal := models.NewChallenge(req.Title, req.Category, req.Points)
+	chal.ID = uuid.New().String()
 	if err := chal.ValidateCategory(); err != nil {
 		http.Error(w, `{"error":"invalid_category","message":"`+err.Error()+`"}`, http.StatusBadRequest)
 		return
