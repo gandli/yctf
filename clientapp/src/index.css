@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+:root {
+  --mantine-primary-color-filled: var(--color-blue-600);
+}
