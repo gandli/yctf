@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gandli/yctf/utils"
 )
 
 func TestSubmitFlagHandler(t *testing.T) {
-	// Create a challenge first
 	body := `{"title": "Flag Test", "category": "web", "points": 100}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -20,13 +21,10 @@ func TestSubmitFlagHandler(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &chal)
 	challengeID := chal["id"].(string)
 
-	// Get the challenge to find its flag
-	req = httptest.NewRequest(http.MethodGet, "/api/v1/challenges/"+challengeID, nil)
-	w = httptest.NewRecorder()
-	GetChallengeHandler(w, req)
+	secret := "dev-flag-secret-change-in-production"
+	correctFlag := utils.GenerateFlag("team-placeholder", challengeID, secret)
 
-	// Submit correct flag (using test helper)
-	subBody := `{"challenge_id":"` + challengeID + `","flag":"flag{test-correct}"}`
+	subBody := `{"challenge_id":"` + challengeID + `","flag":"` + correctFlag + `"}`
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/submit", bytes.NewBufferString(subBody))
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
@@ -48,7 +46,6 @@ func TestSubmitFlagHandler(t *testing.T) {
 }
 
 func TestSubmitFlagHandlerIncorrect(t *testing.T) {
-	// Create challenge
 	body := `{"title": "Flag Test 2", "category": "web", "points": 100}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -59,7 +56,6 @@ func TestSubmitFlagHandlerIncorrect(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &chal)
 	challengeID := chal["id"].(string)
 
-	// Submit wrong flag
 	subBody := `{"challenge_id":"` + challengeID + `","flag":"flag{wrong}"}`
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/submit", bytes.NewBufferString(subBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -129,7 +125,6 @@ func TestSubmitFlagHandlerNonExistentChallenge(t *testing.T) {
 }
 
 func TestSubmitFlagHandlerDuplicateCorrect(t *testing.T) {
-	// Create challenge
 	body := `{"title": "Dup Test", "category": "web", "points": 100}`
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/challenges", bytes.NewBufferString(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -140,8 +135,10 @@ func TestSubmitFlagHandlerDuplicateCorrect(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &chal)
 	challengeID := chal["id"].(string)
 
-	// Submit correct flag twice
-	subBody := `{"challenge_id":"` + challengeID + `","flag":"flag{dup-test}"}`
+	secret := "dev-flag-secret-change-in-production"
+	correctFlag := utils.GenerateFlag("team-placeholder", challengeID, secret)
+
+	subBody := `{"challenge_id":"` + challengeID + `","flag":"` + correctFlag + `"}`
 	for i := 0; i < 2; i++ {
 		req = httptest.NewRequest(http.MethodPost, "/api/v1/submit", bytes.NewBufferString(subBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -149,11 +146,9 @@ func TestSubmitFlagHandlerDuplicateCorrect(t *testing.T) {
 		SubmitFlagHandler(w, req)
 	}
 
-	// Second submission should not give points again
 	var resp map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &resp)
 	if resp["correct"] == true {
-		// If still correct, score_gained should be 0
 		if score, ok := resp["score_gained"].(float64); ok && score > 0 {
 			t.Error("duplicate correct submission should not award points again")
 		}
