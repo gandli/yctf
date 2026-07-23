@@ -1,25 +1,25 @@
-# YCTF API 文档
+# YCTF API Documentation
 
-> RESTful API 设计与 WebSocket 事件规范。
+> RESTful API design and WebSocket event specification.
 
 ---
 
-## 基础信息
+## Base Information
 
-| 项目 | 值 |
-|------|-----|
+| Item | Value |
+|------|-------|
 | Base URL | `/api/v1` |
-| 认证 | Bearer Token (JWT) |
-| 格式 | JSON |
-| CORS | 配置化（默认 `http://localhost:5173`） |
+| Authentication | Bearer Token (JWT) |
+| Format | JSON |
+| CORS | Configurable (default `http://localhost:5173`) |
 
 ---
 
-## 认证
+## Authentication
 
 ### POST `/auth/register`
 
-注册新用户。
+Register a new user.
 
 **Request:**
 ```json
@@ -91,11 +91,11 @@
 
 ---
 
-## 用户
+## Users
 
 ### GET `/users/me`
 
-获取当前用户信息。
+Get current user information.
 
 **Response (200):**
 ```json
@@ -115,15 +115,15 @@
 
 ### PATCH `/users/me`
 
-更新用户信息（昵称、密码）。
+Update user info (nickname, password).
 
 ---
 
-## 团队
+## Teams
 
 ### POST `/teams`
 
-创建团队。
+Create a team.
 
 **Request:**
 ```json
@@ -134,7 +134,7 @@
 
 ### POST `/teams/join`
 
-通过邀请码加入团队。
+Join a team via invite code.
 
 **Request:**
 ```json
@@ -145,20 +145,20 @@
 
 ### GET `/teams/:id`
 
-获取团队详情（成员、解题历史）。
+Get team details (members, solve history).
 
 ---
 
-## 题目
+## Challenges
 
 ### GET `/challenges`
 
-获取题目列表（按分类筛选）。
+Get challenge list (filterable by category).
 
 **Query Params:**
 - `category` — web/pwn/crypto/re/misc/osint
-- `page` — 页码
-- `limit` — 每页数量
+- `page` — page number
+- `limit` — per page
 
 **Response (200):**
 ```json
@@ -181,7 +181,7 @@
 
 ### GET `/challenges/:id`
 
-获取题目详情。
+Get challenge details.
 
 **Response (200):**
 ```json
@@ -206,7 +206,7 @@
 
 ### POST `/challenges` (Admin/Author)
 
-创建题目。
+Create a challenge.
 
 **Request:**
 ```json
@@ -224,11 +224,11 @@
 
 ---
 
-## 容器实例
+## Container Instances
 
 ### POST `/challenges/:id/start`
 
-启动容器实例。
+Start a container instance.
 
 **Response (201):**
 ```json
@@ -244,11 +244,11 @@
 
 ### POST `/instances/:id/stop`
 
-停止容器实例。
+Stop a container instance.
 
 ### GET `/instances/:id`
 
-获取实例状态。
+Get instance status.
 
 **Response (200):**
 ```json
@@ -266,11 +266,11 @@
 
 ---
 
-## Flag 提交
+## Flag Submission
 
 ### POST `/submit`
 
-提交 flag。
+Submit a flag.
 
 **Request:**
 ```json
@@ -280,25 +280,25 @@
 }
 ```
 
-**Response (200) — 正确:**
+**Response (200) — Correct:**
 ```json
 {
   "correct": true,
-  "message": "🎉 Flag correct! +100 points",
+  "message": "Flag correct! +100 points",
   "score_gained": 100,
   "team_score": 1600
 }
 ```
 
-**Response (200) — 错误:**
+**Response (200) — Incorrect:**
 ```json
 {
   "correct": false,
-  "message": "❌ Incorrect flag"
+  "message": "Incorrect flag"
 }
 ```
 
-**Response (429) — 限速:**
+**Response (429) — Rate limited:**
 ```json
 {
   "error": "rate_limit_exceeded",
@@ -309,11 +309,11 @@
 
 ---
 
-## 排行榜
+## Scoreboard
 
 ### GET `/scoreboard`
 
-获取排行榜。
+Get the leaderboard.
 
 **Response (200):**
 ```json
@@ -328,10 +328,10 @@
 
 ### GET `/scoreboard/timeline`
 
-获取团队得分时间线（用于图表）。
+Get team score timeline (for charts).
 
 **Query Params:**
-- `team_id` — 可选，筛选特定团队
+- `team_id` — optional, filter by team
 
 **Response (200):**
 ```json
@@ -345,11 +345,11 @@
 
 ---
 
-## Writeup
+## Writeups
 
 ### POST `/writeups`
 
-提交 writeup。
+Submit a writeup.
 
 **Request:**
 ```json
@@ -362,46 +362,46 @@
 
 ### GET `/writeups`
 
-获取已审核的 writeup 列表。
+Get approved writeups list.
 
 ---
 
-## 管理端点 (Admin)
+## Admin Endpoints
 
 ### GET `/admin/users`
 
-用户列表（分页、搜索）。
+User list (paginated, searchable).
 
 ### PATCH `/admin/users/:id`
 
-更新用户角色/封禁。
+Update user role/ban status.
 
 ### GET `/admin/submissions`
 
-提交记录审计。
+Submission audit log.
 
 ### GET `/admin/stats`
 
-平台统计（用户数、提交数、容器数）。
+Platform statistics (users, submissions, containers).
 
 ---
 
-## WebSocket 事件
+## WebSocket Events
 
-**连接:** `ws://localhost:8080/ws`
+**Connection:** `ws://localhost:8080/ws`
 
-**握手:** 携带 JWT token（query param 或 header）
+**Handshake:** JWT token (query param or header)
 
-### 事件类型
+### Event Types
 
-| 事件 | 方向 | Payload |
-|------|------|---------|
+| Event | Direction | Payload |
+|-------|-----------|---------|
 | `score_update` | Server → Client | `{ teams: [...], timestamp }` |
 | `challenge_solved` | Server → Client | `{ team_name, challenge_title, points }` |
 | `notification` | Server → Client | `{ type, message }` |
 | `ping` | Bidirectional | `{}` |
 
-### 示例
+### Example
 
 ```json
 // Server → Client
@@ -418,7 +418,7 @@
 
 ---
 
-## 错误格式
+## Error Format
 
 ```json
 {
@@ -428,14 +428,14 @@
 }
 ```
 
-### 错误码
+### Error Codes
 
-| HTTP | Code | 说明 |
-|------|------|------|
-| 400 | `bad_request` | 请求格式错误 |
-| 401 | `unauthorized` | 未认证 |
-| 403 | `forbidden` | 权限不足 |
-| 404 | `not_found` | 资源不存在 |
-| 409 | `conflict` | 资源冲突（如重复注册） |
-| 429 | `rate_limit_exceeded` | 请求过于频繁 |
-| 500 | `internal_error` | 服务器内部错误 |
+| HTTP | Code | Description |
+|------|------|-------------|
+| 400 | `bad_request` | Invalid request format |
+| 401 | `unauthorized` | Not authenticated |
+| 403 | `forbidden` | Insufficient permissions |
+| 404 | `not_found` | Resource not found |
+| 409 | `conflict` | Resource conflict (e.g., duplicate registration) |
+| 429 | `rate_limit_exceeded` | Too many requests |
+| 500 | `internal_error` | Server error |
