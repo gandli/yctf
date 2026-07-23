@@ -1,27 +1,27 @@
-# YCTF 数据库文档
+# YCTF Database Documentation
 
-> PostgreSQL schema 设计与 Redis 数据结构。
+> PostgreSQL schema design and Redis data structures.
 
 ---
 
-## ER 图（核心实体）
+## ER Diagram (Core Entities)
 
 ```
-┌──────────┐      ┌──────────────┐      ┌─────────────┐
-│  users   │      │   teams      │      │ challenges  │
-├──────────┤      ├──────────────┤      ├─────────────┤
-│ id (PK)  │──┐   │ id (PK)      │      │ id (PK)     │
++----------+      +--------------+      +-------------+
+|  users   │      │   teams      │      │ challenges  |
++----------+      +--------------+      +-------------+
+│ id (PK)  │--+   │ id (PK)      │      │ id (PK)     │
 │ username │  └──>│ captain_id   │      │ title       │
 │ email    │      │ name         │      │ category    │
 │ password │      │ score        │      │ points      │
 │ role     │      │ invite_code  │      │ is_visible  │
-│ team_id  │      └──────────────┘      │ created_by  │
-└──────────┘                            └─────────────┘
+│ team_id  │      +--------------+      │ created_by  │
++----------+                            +-------------+
        │                                      │
-       │       ┌──────────────┐              │
+       │       +--------------+              │
        │       │ submissions  │              │
-       │       ├──────────────┤              │
-       │──┐    │ id (PK)      │    ┌────────┘
+       │       +--------------+              │
+       │--┐    │ id (PK)      │    ┌--------+
           └──>│ user_id (FK)  │    │
                │ team_id (FK)  │<───┘
                │ challenge_id  │
@@ -32,22 +32,22 @@
 
 ---
 
-## 表定义
+## Table Definitions
 
 ### users
 
 ```sql
 CREATE TABLE users (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username    VARCHAR(32) UNIQUE NOT NULL,
-    email       VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    role        VARCHAR(16) NOT NULL DEFAULT 'player' CHECK (role IN ('admin', 'author', 'player')),
-    team_id     UUID REFERENCES teams(id) ON DELETE SET NULL,
-    is_banned   BOOLEAN NOT NULL DEFAULT FALSE,
-    last_login  TIMESTAMPTZ,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username        VARCHAR(32) UNIQUE NOT NULL,
+    email           VARCHAR(255) UNIQUE NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    role            VARCHAR(16) NOT NULL DEFAULT 'player' CHECK (role IN ('admin', 'author', 'player')),
+    team_id         UUID REFERENCES teams(id) ON DELETE SET NULL,
+    is_banned       BOOLEAN NOT NULL DEFAULT FALSE,
+    last_login      TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_team ON users(team_id);
@@ -58,14 +58,14 @@ CREATE INDEX idx_users_email ON users(email);
 
 ```sql
 CREATE TABLE teams (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name        VARCHAR(64) UNIQUE NOT NULL,
-    captain_id  UUID REFERENCES users(id),
-    score       INTEGER NOT NULL DEFAULT 0,
-    invite_code VARCHAR(16) UNIQUE,
-    is_banned   BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            VARCHAR(64) UNIQUE NOT NULL,
+    captain_id      UUID REFERENCES users(id),
+    score           INTEGER NOT NULL DEFAULT 0,
+    invite_code     VARCHAR(16) UNIQUE,
+    is_banned       BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -97,13 +97,13 @@ CREATE INDEX idx_challenges_visible ON challenges(is_visible);
 
 ```sql
 CREATE TABLE attachments (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    challenge_id  UUID NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
-    filename      VARCHAR(255) NOT NULL,
-    file_path     VARCHAR(500) NOT NULL,
-    file_hash     VARCHAR(64),
-    file_size     BIGINT,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    challenge_id    UUID NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
+    filename        VARCHAR(255) NOT NULL,
+    file_path       VARCHAR(500) NOT NULL,
+    file_hash       VARCHAR(64),
+    file_size       BIGINT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -168,17 +168,17 @@ CREATE INDEX idx_score_events_time ON score_events(solved_at);
 
 ```sql
 CREATE TABLE writeups (
-    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    challenge_id  UUID NOT NULL REFERENCES challenges(id),
-    team_id       UUID NOT NULL REFERENCES teams(id),
-    user_id       UUID NOT NULL REFERENCES users(id),
-    url           VARCHAR(500),
-    content       TEXT,
-    is_approved   BOOLEAN DEFAULT NULL,
-    score         INTEGER DEFAULT 0,
-    reviewed_by   UUID REFERENCES users(id),
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    challenge_id    UUID NOT NULL REFERENCES challenges(id),
+    team_id         UUID NOT NULL REFERENCES teams(id),
+    user_id         UUID NOT NULL REFERENCES users(id),
+    url             VARCHAR(500),
+    content         TEXT,
+    is_approved     BOOLEAN DEFAULT NULL,
+    score           INTEGER DEFAULT 0,
+    reviewed_by     UUID REFERENCES users(id),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -186,48 +186,48 @@ CREATE TABLE writeups (
 
 ```sql
 CREATE TABLE games (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    title       VARCHAR(128) NOT NULL,
-    description TEXT,
-    start_time  TIMESTAMPTZ NOT NULL,
-    end_time    TIMESTAMPTZ NOT NULL,
-    is_active   BOOLEAN NOT NULL DEFAULT FALSE,
-    config      JSONB DEFAULT '{}',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title           VARCHAR(128) NOT NULL,
+    description     TEXT,
+    start_time      TIMESTAMPTZ NOT NULL,
+    end_time        TIMESTAMPTZ NOT NULL,
+    is_active       BOOLEAN NOT NULL DEFAULT FALSE,
+    config          JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
 ---
 
-## 数据库迁移
+## Database Migration
 
-使用 `golang-migrate` 或 `goose` 管理迁移。
+Use `golang-migrate` or `goose` for migration management.
 
 ```
 migrations/
-├── 001_init.up.sql
-├── 001_init.down.sql
-├── 002_add_games.up.sql
-├── 002_add_games.down.sql
-└── ...
++-- 001_init.up.sql
++-- 001_init.down.sql
++-- 002_add_games.up.sql
++-- 002_add_games.down.sql
++-- ...
 ```
 
-迁移命令：
+Migration commands:
 
 ```bash
-# 向上迁移
+# Migrate up
 goose -dir migrations postgres "$DATABASE_URL" up
 
-# 回滚一步
+# Rollback one step
 goose -dir migrations postgres "$DATABASE_URL" down
 
-# 创建新迁移
+# Create new migration
 goose -dir migrations create sql add_feature_x
 ```
 
 ---
 
-## Redis 数据结构
+## Redis Data Structures
 
 ### Leaderboard (Sorted Set)
 

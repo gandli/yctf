@@ -7,30 +7,30 @@
 ## 1. System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Client (Browser)                        │
-│  React SPA + WebSocket Client + i18n                            │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP / WSS
-┌──────────────────────────────▼──────────────────────────────────┐
-│                          Nginx / CORS                           │
-└──────────┬─────────────────────────────────────────────────────┘
-           │
-┌──────────▼──────────────────────────────────────────────────────┐
-│                        Go Backend (chi)                          │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐       │
-│  │  Auth    │ Challenge│  Submit  │ Container│  Admin   │       │
-│  │Controller│Controller│Controller│Controller│Controller│       │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┘       │
-│  ┌─────────────────────────────────────────────────────┐        │
-│  │              Middleware (RBAC, Rate Limit)          │        │
-│  └─────────────────────────────────────────────────────┘        │
-└──────┬──────────────┬──────────────┬────────────────────────────┘
-       │              │              │
-┌──────▼──────┐ ┌─────▼──────┐ ┌────▼─────┐
-│ PostgreSQL  │ │   Redis    │ │  Docker  │
-│ (Primary)   │ │ (Cache/RT) │ │ (Daemon) │
-└─────────────┘ └────────────┘ └──────────┘
++-----------------------------------------------------------------------+
+|                         Client (Browser)                               |
+|  React SPA + WebSocket Client + i18n                                  |
++--------------------------------+--------------------------------------+
+                                 | HTTP / WSS
++--------------------------------v--------------------------------------+
+|                          Nginx / CORS                                  |
++----------+-----------------------------------------------------------+
+           |
++----------v-----------------------------------------------------------+
+|                        Go Backend (chi)                                |
+|  +----------+----------+----------+----------+----------+             |
+|  |  Auth    | Challenge|  Submit  | Container|  Admin   |             |
+|  |Controller|Controller|Controller|Controller|Controller|             |
+|  +----------+----------+----------+----------+----------+             |
+|  +-----------------------------------------------------+             |
+|  |              Middleware (RBAC, Rate Limit)          |             |
+|  +-----------------------------------------------------+             |
++------+--------------+--------------+----------------------------------+
+       |              |              |
++------v------+ +-----v------+ +----v------+
+| PostgreSQL  │ |   Redis    │ |  Docker   │
+│ (Primary)   │ | (Cache/RT) │ | (Daemon)  |
++-------------+ +------------+ +-----------+
 ```
 
 ---
@@ -41,68 +41,68 @@
 
 ```
 src/
-├── cmd/server/          # Entry point, graceful shutdown
-├── controllers/         # HTTP handlers, request validation
-│   ├── auth.go          # Login/register/logout
-│   ├── challenge.go     # CRUD challenges, listing
-│   ├── submit.go        # Flag submission, validation
-│   ├── container.go     # Instance start/stop/status
-│   ├── scoreboard.go    # Leaderboard query, timeline
-│   ├── admin.go         # User/challenge management
-│   └── writeup.go       # Writeup submission
-├── db/
-│   ├── models/          # GORM-free struct definitions
-│   ├── migrations/      # SQL migration files
-│   └── queries/         # Raw SQL queries
-├── middleware/
-│   ├── auth.go          # JWT verification
-│   ├── rbac.go          # Role-based access control
-│   ├── ratelimit.go     # Redis-backed rate limiting
-│   └── cors.go          # CORS configuration
-├── tasks/
-│   ├── flag_rotator.go  # Periodic flag rotation
-│   ├── container_gc.go  # Idle container cleanup
-│   └── score_sync.go    # PG → Redis scoreboard sync
-├── utils/
-│   ├── flag.go          # Flag generation & validation
-│   ├── hash.go          # Password hashing (bcrypt)
-│   └── docker.go        # Docker SDK wrapper
-└── ws/
-    ├── hub.go           # WebSocket connection hub
-    ├── client.go        # WS client abstraction
-    └── message.go       # Event types (score, notify)
++-- cmd/server/          # Entry point, graceful shutdown
++-- controllers/         # HTTP handlers, request validation
+|   +-- auth.go          # Login/register/logout
+|   +-- challenge.go     # CRUD challenges, listing
+|   +-- submit.go        # Flag submission, validation
+|   +-- container.go     # Instance start/stop/status
+|   +-- scoreboard.go    # Leaderboard query, timeline
+|   +-- admin.go         # User/challenge management
+|   +-- writeup.go       # Writeup submission
++-- db/
+|   +-- models/          # GORM-free struct definitions
+|   +-- migrations/      # SQL migration files
+|   +-- queries/         # Raw SQL queries
++-- middleware/
+|   +-- auth.go          # JWT verification
+|   +-- rbac.go          # Role-based access control
+|   +-- ratelimit.go     # Redis-backed rate limiting
+|   +-- cors.go          # CORS configuration
++-- tasks/
+|   +-- flag_rotator.go  # Periodic flag rotation
+|   +-- container_gc.go  # Idle container cleanup
+|   +-- score_sync.go    # PG -> Redis scoreboard sync
++-- utils/
+|   +-- flag.go          # Flag generation & validation
+|   +-- hash.go          # Password hashing (bcrypt)
+|   +-- docker.go        # Docker SDK wrapper
++-- ws/
+    +-- hub.go           # WebSocket connection hub
+    +-- client.go        # WS client abstraction
+    +-- message.go       # Event types (score, notify)
 ```
 
 ### 2.2 Frontend (React)
 
 ```
 clientapp/src/
-├── app/
-│   ├── routes.tsx       # Route definitions
-│   ├── stores/          # Zustand stores (auth, challenge, score)
-│   └── pages/
-│       ├── Home.tsx     # Landing + CTF info
-│       ├── Board.tsx    # Real-time leaderboard
-│       ├── Challenges.tsx  # Challenge list + detail
-│       ├── Profile.tsx  # Team profile, settings
-│       └── Admin/       # Admin panel
-│           ├── Dashboard.tsx
-│           ├── Challenges.tsx
-│           ├── Users.tsx
-│           └── Monitor.tsx
-├── components/
-│   ├── ui/              # Mantine-based primitives
-│   ├── layout/          # Navbar, footer, sidebar
-│   ├── challenge/       # Challenge card, submit form, instance panel
-│   └── scoreboard/      # Scoreboard table, timeline chart
-├── hooks/
-│   ├── useWebSocket.ts  # WS connection & auto-reconnect
-│   ├── useAuth.ts       # Auth state management
-│   └── useChallenge.ts  # Challenge data fetching
-└── utils/
-    ├── api.ts           # Axios instance with interceptors
-    ├── i18n.ts          # react-i18next config
-    └── flag.ts          # Flag format helpers
++-- app/
+|   +-- routes.tsx       # Route definitions
+|   +-- stores/          # Zustand stores (auth, challenge, score)
+|   +-- pages/
+|       +-- Home.tsx     # Landing + CTF info
+|       +-- Board.tsx    # Real-time leaderboard
+|       +-- Challenges.tsx  # Challenge list + detail
+|       +-- Profile.tsx  # Team profile, settings
+|       +-- Admin/       # Admin panel
+|           +-- Dashboard.tsx
+|           +-- Challenges.tsx
+|           +-- Users.tsx
+|           +-- Monitor.tsx
++-- components/
+|   +-- ui/              # Mantine-based primitives
+|   +-- layout/          # Navbar, footer, sidebar
+|   +-- challenge/       # Challenge card, submit form, instance panel
+|   +-- scoreboard/      # Scoreboard table, timeline chart
++-- hooks/
+|   +-- useWebSocket.ts  # WS connection & auto-reconnect
+|   +-- useAuth.ts       # Auth state management
+|   +-- useChallenge.ts  # Challenge data fetching
++-- utils/
+    +-- api.ts           # Axios instance with interceptors
+    +-- i18n.ts          # react-i18next config
+    +-- flag.ts          # Flag format helpers
 ```
 
 ---
@@ -113,67 +113,67 @@ clientapp/src/
 
 ```
 Player submits flag
-        │
-        ▼
-┌─ Frontend ──────────────────────────────┐
-│ 1. Trim, validate format                │
-│ 2. POST /api/submit { challenge_id, flag } │
-└────────────────────┬────────────────────┘
-                     │
-┌─ Backend ──────────▼───────────────────┐
-│ 3. Rate limit check (Redis)             │
-│ 4. JWT → identify user & team           │
-│ 5. Lookup challenge flag in Redis/PG    │
-│ 6. Compare (constant-time)              │
-│ 7. If correct:                          │
-│    a. Write submission record to PG     │
-│    b. Update team score in Redis ZSET   │
-│    c. Broadcast WS event (score update) │
-│ 8. Return result                        │
-└─────────────────────────────────────────┘
+        |
+        v
++-- Frontend ----------------------------------+
+| 1. Trim, validate format                    |
+| 2. POST /api/submit { challenge_id, flag } |
++------------------------+--------------------+
+                         |
++-- Backend -------------v--------------------+
+| 3. Rate limit check (Redis)                 |
+| 4. JWT -> identify user & team              |
+| 5. Lookup challenge flag in Redis/PG        |
+| 6. Compare (constant-time)                  |
+| 7. If correct:                              |
+|    a. Write submission record to PG         |
+|    b. Update team score in Redis ZSET       |
+|    c. Broadcast WS event (score update)     |
+| 8. Return result                            |
++---------------------------------------------+
 ```
 
 ### 3.2 Container Lifecycle
 
 ```
 Admin creates challenge with Docker image
-        │
-        ▼
-┌─ Admin ─────────────────────────────────┐
-│ 1. Define image, ports, env vars        │
-│ 2. Set flag template                    │
-│ 3. Challenge saved to PG                │
-└────────────────────┬────────────────────┘
-                     │ Player clicks "Start"
-┌─ Backend ──────────▼───────────────────┐
-│ 4. Pull image if not cached             │
-│ 5. Generate unique flag (team+challenge)│
-│ 6. Create container with env injection  │
-│ 7. Store instance mapping in PG+Redis   │
-│ 8. Return connection info to player     │
-│ 9. Background GC after idle timeout     │
-└─────────────────────────────────────────┘
+        |
+        v
++-- Admin -------------------------------------+
+| 1. Define image, ports, env vars            |
+| 2. Set flag template                        |
+| 3. Challenge saved to PG                    |
++------------------------+--------------------+
+                         | Player clicks "Start"
++-- Backend -------------v--------------------+
+| 4. Pull image if not cached                 |
+| 5. Generate unique flag (team+challenge)    |
+| 6. Create container with env injection      |
+| 7. Store instance mapping in PG+Redis       |
+| 8. Return connection info to player         |
+| 9. Background GC after idle timeout         |
++---------------------------------------------+
 ```
 
 ### 3.3 Real-time Scoreboard
 
 ```
 Flag solved event
-        │
-        ▼
-┌─ Backend ──────────────────────────────┐
-│ 1. Update team score in Redis ZSET     │
-│ 2. Publish event to WS hub             │
-└────────────────────┬────────────────────┘
-                     │
-┌─ WebSocket Hub ───▼───────────────────┐
-│ 3. Fan-out to all connected clients    │
-└────────────────────┬────────────────────┘
-                     │
-┌─ Frontend ────────▼───────────────────┐
-│ 4. Mantine Table re-render             │
-│ 5. Toast notification (optional)       │
-└────────────────────────────────────────┘
+        |
+        v
++-- Backend ----------------------------------+
+| 1. Update team score in Redis ZSET          |
+| 2. Publish event to WS hub                 |
++------------------------+--------------------+
+                         |
++-- WebSocket Hub -------v-------------------+
+| 3. Fan-out to all connected clients        |
++------------------------+--------------------+
+                         |
++-- Frontend ------------v-------------------+
+| 4. Mantine Table re-render                 |
+| 5. Toast notification (optional)           |
++--------------------------------------------+
 ```
 
 ---
@@ -186,23 +186,23 @@ users (id, username, email, password_hash, role, team_id, created_at)
 teams (id, name, captain_id, score, invited_code, created_at)
 
 -- Challenges
-challenges (id, title, description, category, points, flag_template, 
+challenges (id, title, description, category, points, flag_template,
             container_image, container_config, is_visible, created_by, created_at)
 attachments (id, challenge_id, filename, url, hash)
 
 -- Container Instances
-instances (id, challenge_id, team_id, container_id, internal_port, 
+instances (id, challenge_id, team_id, container_id, internal_port,
            status, started_at, expires_at, flag)
 
 -- Submissions
-submissions (id, user_id, team_id, challenge_id, flag_submitted, 
+submissions (id, user_id, team_id, challenge_id, flag_submitted,
              is_correct, ip_address, submitted_at)
 
 -- Score timeline (for charts)
 score_events (id, team_id, challenge_id, points_awarded, solved_at)
 
 -- Writeups
-writeups (id, challenge_id, team_id, user_id, url, content, 
+writeups (id, challenge_id, team_id, user_id, url, content,
           is_approved, score, created_at)
 ```
 
@@ -223,21 +223,21 @@ writeups (id, challenge_id, team_id, user_id, url, content,
 ## 6. Docker Network Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│           yctf_network                  │
-│                                         │
-│  ┌──────────┐  ┌──────────┐  ┌───────┐ │
-│  │  yctf-   │  │  yctf-   │  │yctf-  │ │
-│  │  server  │  │  redis   │  │  pg   │ │
-│  └──────────┘  └──────────┘  └───────┘ │
-│                                         │
-│  ┌─────────────────────────────────┐   │
-│  │    challenge containers         │   │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐       │   │
-│  │  │web-1│ │pwn-1│ │cry-1│ ...  │   │
-│  │  └─────┘ └─────┘ └─────┘       │   │
-│  └─────────────────────────────────┘   │
-└─────────────────────────────────────────┘
++---------------------------------------------+
+|           yctf_network                      |
+|                                             |
+|  +----------+  +----------+  +-------+     |
+|  |  yctf-   |  |  yctf-   |  | yctf- |     |
+|  |  server  |  |  redis   |  |  pg   |     |
+|  +----------+  +----------+  +-------+     |
+|                                             |
+|  +-------------------------------------+   |
+|  |    challenge containers             |   |
+|  |  +-----+ +-----+ +-----+            |   |
+|  |  |web-1| |pwn-1| |cry-1|  ...      |   |
+|  |  +-----+ +-----+ +-----+            |   |
+|  +-------------------------------------+   |
++---------------------------------------------+
 ```
 
 - Challenge containers join the same Docker network

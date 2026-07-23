@@ -7,10 +7,10 @@
 ## Phase 1: Foundation (Week 1-2)
 
 ### Project Setup
-- [ ] Initialize Go module (`go mod init`)
+- [x] Initialize Go module (`go mod init`)
 - [ ] Initialize React app (`npm create vite@latest clientapp -- --template react-ts`)
 - [ ] Configure Mantine + Tailwind in clientapp
-- [ ] Write `docker-compose.yml` (server + pg + redis + grafana)
+- [x] Write `docker-compose.yml` (server + pg + redis + grafana)
 - [ ] Configure CORS and chi router
 
 ### Database & Models
@@ -141,6 +141,6 @@
 
 ## Current Status
 
-🚧 **Phase 1: Foundation** — Not started
+🚧 **Phase 1: Foundation** — In progress
 
-Next action: Initialize Go module + React app, write initial docker-compose.yml
+Next action: Initialize React app, write initial Go server with health check endpoint

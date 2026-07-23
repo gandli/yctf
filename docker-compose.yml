@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: yctf-postgres
+    environment:
+      POSTGRES_USER: yctf
+      POSTGRES_PASSWORD: yctf_dev_password
+      POSTGRES_DB: yctf
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yctf"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yctf
+
+  redis:
+    image: redis:7-alpine
+    container_name: yctf-redis
+    command: redis-server --requirepass yctf_redis_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "yctf_redis_pass", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - yctf
+
+  server:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    container_name: yctf-server
+    environment:
+      DATABASE_URL: postgres://yctf:yctf_dev_password@postgres:5432/yctf?sslmode=disable
+      REDIS_URL: redis://:yctf_redis_pass@redis:6379/0
+      JWT_SECRET: dev-secret-change-in-production-min-32-bytes-long!!
+      PORT: 8080
+      CORS_ORIGINS: http://localhost:5173
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - yctf
+
+  clientapp:
+    image: node:20-alpine
+    container_name: yctf-clientapp
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./clientapp:/app
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_WS_URL: ws://localhost:8080
+    depends_on:
+      - server
+    networks:
+      - yctf
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  yctf:
+    driver: bridge
