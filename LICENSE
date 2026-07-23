@@ -1,0 +1,26 @@
+# YCTF
+
+Copyright (C) 2026 gandli
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+## Additional Terms
+
+1. The "YCTF" name, logo, and brand assets are trademarks of the author.
+2. When deploying a modified version as a public service, you must:
+   - Retain the original copyright and attribution information
+   - State the version of YCTF being used and its license
+   - Provide a link to the original repository and license text
