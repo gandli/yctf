@@ -18,11 +18,10 @@ Designed for security teams, CTF organizers, and training environments who want 
 
 | Layer | Technology |
 |-------|------------|
-| **Backend** | Go 1.24 (chi router, pgx, go-redis, gorilla/websocket) |
-| **Frontend** | React 18 + Vite + Mantine + Tailwind CSS |
+| **Backend** | Go 1.25 (chi router, pgx, go-redis, gorilla/websocket) |
+| **Frontend** | React 19 + Vite + Mantine + Tailwind CSS |
 | **Database** | PostgreSQL |
 | **Cache/Realtime** | Redis (Sorted Sets for leaderboard, rate limiting) |
-| **Monitor** | Grafana |
 | **Runtime** | Docker (dynamic container distribution) |
 | **Deploy** | docker-compose + GitHub Actions → GHCR |
 
@@ -74,9 +73,8 @@ git clone https://github.com/gandli/yctf.git && cd yctf
 docker compose up -d
 
 # Access
-# Frontend: http://localhost:3000
+# Frontend (dev server): http://localhost:5173
 # Backend API: http://localhost:8080
-# Grafana: http://localhost:3001
 ```
 
 ---
